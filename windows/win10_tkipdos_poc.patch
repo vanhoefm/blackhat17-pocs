@@ -1,0 +1,16 @@
+diff --git a/src/rsn_supp/wpa.c b/src/rsn_supp/wpa.c
+index 3c47879..e671b65 100644
+--- a/src/rsn_supp/wpa.c
++++ b/src/rsn_supp/wpa.c
+@@ -1305,6 +1305,11 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
+ 			sm->cur_pmksa = sa;
+ 	}
+ 
++	// Message 4 was sent and keys have been installed
++	printf(">> %s: sending two MIC failure reports right after 4-way HS msg4\n", __FUNCTION__);
++	wpa_sm_key_request(sm, 1, 1);
++	wpa_sm_key_request(sm, 1, 1);
++
+ 	sm->msg_3_of_4_ok = 1;
+ 	return;
+ 
