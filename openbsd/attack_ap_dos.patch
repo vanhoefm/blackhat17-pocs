@@ -14,7 +14,7 @@ attack.
 
 git clone git://w1.fi/srv/git/hostap.git -b hostap_2_6 openbsd-dos
 cd openbsd-dos
-patch -p1 < attack_ap_dos.patch
+git apply attack_ap_dos.patch
 cd wpa_supplicant
 cp defconfig .config
 make -j 8
