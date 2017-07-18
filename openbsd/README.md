@@ -19,7 +19,7 @@ However, OpenBSD permanently blocks clients from connecting.
 ## Proof-of-concept
 
 We created a [PoC patch](attack_ap_dos.patch) that modifies Linux's `wpa_supplicant` to carry out the attck.
-It transmits two MIC failure reports after receiving message 1 from the AP,
+It transmits two MIC failure reports after receiving message 1 of the 4-way handshake from the AP,
 and uses an all-zero KCK to authenticate the frame.
 This triggers the permanent TKIP countermeasure period, meaning clients can no longer connect to the AP.
 
