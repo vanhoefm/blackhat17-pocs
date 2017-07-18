@@ -27,6 +27,8 @@ Now start the rogue AP:
 
 		sudo ./hostapd hostapd.conf
 
+The network trace [example-mitm-attack.pcapng](example-mitm-attack.pcapng) contains an example network trace of a successfull man-in-the-middle attack against an OpenBSD client.
+
 ## Details
 
 The AP does perform some state checks during the handshake (though not for EAPOL-Key Request frames).
