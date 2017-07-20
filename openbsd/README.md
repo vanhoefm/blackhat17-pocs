@@ -51,7 +51,7 @@ On receipt, the function checks that the replay counter is valid, and then verif
 Unfortunately, this key has not yet been initialized and is all-zeros, because no 4-way handshake occurred.
 Since the key is predictable, an attacker can pass the MIC check.
 Eventually the function will execute `ni->ni_port_valid = 1;`, which means the client will now accept incoming data frames, and will start sending data.
-Note that, because no unicast key was set, the client transmits (and will receive/accept) plaintext frames.
+Note that, because the flag `IEEE80211_NODE_TXRXPROT` was not set in the `ni->ni_flags` field (this is normally done when receiving message 3), the client transmits (and will receive/accept) plaintext frames.
 
 
 # OpenBSD Access Point Denial-of-Service

