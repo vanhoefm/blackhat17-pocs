@@ -14,6 +14,8 @@ The script `win7_dos_attack.py` uses scapy to execute the attack. To use this sc
 		$ sudo ifconfig wlp0s20u1 up
 		$ sudo ./win7_dos_attack.py
 
+You can [view a demo of this attack on YouTube](https://www.youtube.com/watch?v=goPWTvOjhEM).
+
 ## Notes
 
 This was tested against Windows 7 Professional 64-bit (Service Pack 1 - build 7601), with windows using a TL-WN722N Wi-Fi dongle as AP. This attack assumes the vulnerability is in the Windows Wi-Fi stack instead of in the Atheros driver (but we are not yet 100% sure of this).
