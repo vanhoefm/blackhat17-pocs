@@ -12,15 +12,10 @@ In particular, a rogue access point can skip the 4-way handshake, meaning the cl
 We created a [PoC patch](mitm_poc.patch) that modifies Linux's `hostapd` to carry out the man-in-the-middle attck.
 When an OpenBSD client connects to the rogue AP, it will send message 1 of the group key handshake, instead of starting the 4-way handshake.
 The client wrongly accepts this message, replies with message 2 of the group key handshake, and starts receiving and sending *unencrypted* data frames.
-To execute the attack first patch `hostapd`:
+To execute the attack first install required dependencies, then download and patch `hostapd`:
 
-		git clone git://w1.fi/srv/git/hostap.git -b hostap_2_6 openbsd-mitm
-		cd openbsd-mitm
-		wget https://raw.githubusercontent.com/vanhoefm/asiaccs2017-pocs/master/openbsd/mitm_poc.patch
-		git apply mitm_poc.patch
-		cd hostapd
-		cp defconfig .config
-		make -j 8
+		sudo apt-get install libnl-3-dev libnl-genl-3-dev pkg-config libssl-dev
+		./get-and-compile-mitm.sh
 
 Then edit `hostapd.conf` and configure options of the rogue AP to mimic the network you are targetting.
 Now start the rogue AP:

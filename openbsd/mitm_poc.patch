@@ -1,13 +1,27 @@
-From a4ae5bae779f55b3eaf68bcf391005c096da1ab9 Mon Sep 17 00:00:00 2001
+From d017d2aded0159e8836f690222d3c47a5a38404d Mon Sep 17 00:00:00 2001
 From: Mathy <vanhoefm@users.noreply.github.com>
-Date: Thu, 20 Jul 2017 21:46:59 +0200
+Date: Sat, 22 Jul 2017 22:02:49 -0400
 Subject: [PATCH] OpenBSD man-in-the-middle against WPA1/2 clients PoC
 
 ---
+ hostapd/defconfig    |  2 +-
  hostapd/hostapd.conf | 12 ++++++------
  src/ap/wpa_auth.c    | 41 +++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 47 insertions(+), 6 deletions(-)
+ 3 files changed, 48 insertions(+), 7 deletions(-)
 
+diff --git a/hostapd/defconfig b/hostapd/defconfig
+index 4659dd1e6..1a24dbb2b 100644
+--- a/hostapd/defconfig
++++ b/hostapd/defconfig
+@@ -31,7 +31,7 @@ CONFIG_DRIVER_NL80211=y
+ #CONFIG_LIBNL20=y
+ 
+ # Use libnl 3.2 libraries (if this is selected, CONFIG_LIBNL20 is ignored)
+-#CONFIG_LIBNL32=y
++CONFIG_LIBNL32=y
+ 
+ 
+ # Driver interface for FreeBSD net80211 layer (e.g., Atheros driver)
 diff --git a/hostapd/hostapd.conf b/hostapd/hostapd.conf
 index fa9a855a6..aa4571e23 100644
 --- a/hostapd/hostapd.conf
@@ -190,5 +204,5 @@ index 358708648..9929fd108 100644
  	return ret;
  }
 -- 
-2.13.2
+2.11.0
 
