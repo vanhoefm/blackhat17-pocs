@@ -14,12 +14,14 @@ When an OpenBSD client connects to the rogue AP, it will send message 1 of the g
 The client wrongly accepts this message, replies with message 2 of the group key handshake, and starts receiving and sending *unencrypted* data frames.
 To execute the attack first install required dependencies, then download and patch `hostapd`:
 
-		sudo apt-get install libnl-3-dev libnl-genl-3-dev pkg-config libssl-dev
+		sudo apt-get install libnl-3-dev libnl-genl-3-dev pkg-config libssl-dev rfkill
 		./get-and-compile-mitm.sh
+		cd openbsd-mitm/hostapd/
 
 Then edit `hostapd.conf` and configure options of the rogue AP to mimic the network you are targetting.
-Now start the rogue AP:
+**Disable Wi-Fi in your network manager,** and then start the rogue AP:
 
+		sudo rfkill unblock wifi
 		sudo ./hostapd hostapd.conf
 
 The network trace [example-mitm-attack.pcapng](example-mitm-attack.pcapng) contains an example network trace of a successfull man-in-the-middle attack against an OpenBSD client.
