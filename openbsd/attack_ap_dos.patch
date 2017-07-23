@@ -1,6 +1,6 @@
-From b3b09d63d4dddcbd6c3b3c0cb8849d32518af9bc Mon Sep 17 00:00:00 2001
+From 2926eedc7a16664bd33810123a4414397b9c52ff Mon Sep 17 00:00:00 2001
 From: Mathy <vanhoefm@users.noreply.github.com>
-Date: Tue, 18 Jul 2017 07:43:47 -0500
+Date: Sun, 23 Jul 2017 08:55:51 -0400
 Subject: [PATCH] Perform OpenBSD TKIP DoS by exploiting all-zero KCK
 
 This patch sends two TKIP MIC failure reports to the AP, protected using
@@ -23,13 +23,14 @@ make -j 8
 
 sudo ./wpa_supplicant -D nl80211 -i $INTERFACE -c network.conf
 ---
- src/rsn_supp/wpa.c          |    8 ++++++++
- wpa_supplicant/network.conf |    6 ++++++
- 2 files changed, 14 insertions(+)
+ src/rsn_supp/wpa.c          | 8 ++++++++
+ wpa_supplicant/defconfig    | 2 +-
+ wpa_supplicant/network.conf | 6 ++++++
+ 3 files changed, 15 insertions(+), 1 deletion(-)
  create mode 100644 wpa_supplicant/network.conf
 
 diff --git a/src/rsn_supp/wpa.c b/src/rsn_supp/wpa.c
-index 3c47879..731990a 100644
+index 3c4787925..731990a56 100644
 --- a/src/rsn_supp/wpa.c
 +++ b/src/rsn_supp/wpa.c
 @@ -463,6 +463,14 @@ static void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
@@ -47,9 +48,22 @@ index 3c47879..731990a 100644
  	os_memset(&ie, 0, sizeof(ie));
  
  	if (sm->proto == WPA_PROTO_RSN || sm->proto == WPA_PROTO_OSEN) {
+diff --git a/wpa_supplicant/defconfig b/wpa_supplicant/defconfig
+index 1d05198f8..a5f2fdc5a 100644
+--- a/wpa_supplicant/defconfig
++++ b/wpa_supplicant/defconfig
+@@ -44,7 +44,7 @@ CONFIG_DRIVER_NL80211=y
+ #CONFIG_LIBNL20=y
+ 
+ # Use libnl 3.2 libraries (if this is selected, CONFIG_LIBNL20 is ignored)
+-#CONFIG_LIBNL32=y
++CONFIG_LIBNL32=y
+ 
+ 
+ # Driver interface for FreeBSD net80211 layer (e.g., Atheros driver)
 diff --git a/wpa_supplicant/network.conf b/wpa_supplicant/network.conf
 new file mode 100644
-index 0000000..13f68a4
+index 000000000..13f68a49c
 --- /dev/null
 +++ b/wpa_supplicant/network.conf
 @@ -0,0 +1,6 @@
@@ -60,5 +74,5 @@ index 0000000..13f68a4
 +	pairwise=TKIP
 +}
 -- 
-1.7.10.4
+2.11.0
 
