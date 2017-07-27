@@ -1,5 +1,7 @@
 # OpenBSD Client Man-in-the-Middle
 
+[You can watch a demonstration of the attack!](https://www.youtube.com/watch?v=XLvXL7HabYM)
+
 ## Description
 
 Due to insufficient state checks in the Wi-Fi handshake, clients that use WPA1 or WPA2 are vulnerable to a man-in-the-middle attack.
