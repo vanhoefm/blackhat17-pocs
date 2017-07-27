@@ -1,5 +1,7 @@
 # Windows 7 DoS: win7_dos_attack.py
 
+[You can watch a demonstration of the attack!](https://www.youtube.com/watch?v=goPWTvOjhEM)
+
 ## Description
 
 A windows 7 hotspot is vulnerable to an unauthenticated targeted DoS attack that permanently prevents a specific client from connecting to the network. This attack does not require knowledge of credentials, and can be executed by anyone within range of the AP. The attack works by sending two association requests after one another, after first sending an authentication request. The sender MAC address is set the the MAC address of the victim. After this, the victim can no longer connect to the network. This allows an adversary to permanently block specific MAC addresses from connecting to the network.
