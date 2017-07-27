@@ -1,6 +1,6 @@
 # OpenBSD Client Man-in-the-Middle
 
-[You can watch a demonstration of the attack!](https://www.youtube.com/watch?v=XLvXL7HabYM)
+[You can watch a demonstration of the attack!](https://www.youtube.com/watch?v=t4fvgLPOYOw)
 
 ## Description
 
@@ -54,6 +54,8 @@ Note that, because the flag `IEEE80211_NODE_TXRXPROT` was not set in the `ni->ni
 
 
 # OpenBSD Access Point Denial-of-Service
+
+[You can watch a demonstration of the attack!](https://www.youtube.com/watch?v=XLvXL7HabYM)
 
 ## Description
 
