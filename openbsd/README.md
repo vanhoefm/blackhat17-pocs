@@ -33,11 +33,13 @@ The network trace [example-mitm-attack.pcapng](example-mitm-attack.pcapng) conta
 The AP does perform some state checks during the handshake (though not for EAPOL-Key Request frames).
 For example, in `ieee80211_recv_group_msg2` it checks that `ni->ni_rsn_gstate != RSNA_REKEYNEGOTIATING`, assuring handshake frames are processed in order.
 However, the following functions are missing similar checks:
+
 - `ieee80211_recv_4way_msg1`
 - `ieee80211_recv_4way_msg3`
 - `ieee80211_recv_wpa_group_msg1`
 - `ieee80211_recv_rsn_group_msg1`
 - `ieee80211_recv_eapol_key_req`
+
 These functions will process incoming frames, regardless of which handshake frames have already been received.
 
 This bug is exploitable in `ieee80211_recv_rsn_group_msg1`.
