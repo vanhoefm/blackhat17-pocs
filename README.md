@@ -1,6 +1,6 @@
 # WiFuzz: Detecting and Exploiting Logical Flaws in the Wi-Fi Cryptographic Handshake
 
-This repository contains proof-of-concepts of selected attacks mentioned in my Black Hat 2017 talk.
+This repository contains proof-of-concepts of selected attacks mentioned in my Black Hat 2017 talk. The talk was based on the paper [Discovering logical vulnerabilities in the Wi-Fi handshake using model-based testing](https://papers.mathyvanhoef.com/asiaccs2017.pdf). The [testing framework](https://github.com/domienschepers/asiaccs-discovering-logical-vulnerabilities) explained during the talk, and in the paper, is also public.
 
 ## Table of Content
 
